@@ -27,6 +27,9 @@ public class LR1Automaton {
     private final Map<Integer, Map<Symbol, Integer>> transitions = new HashMap<>();
     private String augmentedLeftName = null;
 
+    //simbolo auxiliar epsilon.
+    Symbol epsilon =  new Symbol("epsilon", SymbolType.TERMINAL);
+
     public LR1Automaton(Grammar grammar) {
         this.grammar = Objects.requireNonNull(grammar);
     }
@@ -64,7 +67,7 @@ public class LR1Automaton {
         //para calcular el first
         StaticAnalyzer calc = new StaticAnalyzer(grammar);
         //calculamos el first de toda la gramatica.
-        HashSet<Set<Symbol>> first = calc.getFirstSets();
+        Map<Symbol, Set<Symbol>> first = calc.getFirstSets();
 
         // 4. While the worklist is not empty:
         // Paso 4:
@@ -90,32 +93,40 @@ public class LR1Automaton {
                     //partir de la posicion del punto (aunque luego eliminaremos el final o el primero
                     //segun donde este el simbolo B).
 
-                }
-                //          - Calculate the FIRST set of the sequence `βa`. This will be the lookahead for the new item.
-                //          - For each terminal `b` in FIRST(βa):
-                //             - Create a new item `[B -> • γ, b]`.
-                //             - If this new item is not already in the `closure` set:
-                //               - Add it to `closure`.
-                //               - Enqueue it to the worklist.
-            }
+                    //obtenemos la secuencia despues del punto.
+                    LinkedList<Symbol>seq=this.productionPostDot(item);
+                    //Eliminamos B para obtener la secuencia a partir de Beta
+                    seq.remove(0);
+                    //Añadimos el lookahead a la secuencia despues de beta.
+                    seq.add(item.lookahead);
+                    
+                    //- Calculate the FIRST set of the sequence `βa`. This will be the lookahead for the new item.
+                    Set<Symbol> newLookAhead = this.computeFirstOfSequence(seq, first,epsilon);
+                    //- For each terminal `b` in FIRST(βa):
+                    for (Symbol symbol : newLookAhead){
+                        if(symbol.type==SymbolType.TERMINAL){
+                            //             - Create a new item `[B -> • γ, b]`.
+                            LR1Item newItem = new LR1Item(production, 0, symbol);
 
-            
+                            //             - If this new item is not already in the `closure` set:
+                            //               - Add it to `closure`.
+                            //               - Enqueue it to the worklist.
+                            if (closure.add(item)){
+                                worklist.add(item);
+                            }
+
+                        }
+                        
+                    }
+
+
+
+                }   
+            }            
         }
-
-        
-        
         
         // 5. Return the `closure` set.
-
-
-
-
-
-
-
-
-
-        return new HashSet<>(); // Placeholder
+        return closure;
     }
 
     /**
