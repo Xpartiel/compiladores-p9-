@@ -111,8 +111,8 @@ public class LR1Automaton {
                             //             - If this new item is not already in the `closure` set:
                             //               - Add it to `closure`.
                             //               - Enqueue it to the worklist.
-                            if (closure.add(item)){
-                                worklist.add(item);
+                            if (closure.add(newItem)){
+                                worklist.add(newItem);
                             }
 
                         }
