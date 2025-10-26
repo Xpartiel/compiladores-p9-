@@ -52,18 +52,54 @@ public class LR1Automaton {
 
     /**
      * Compute FIRST of a sequence of symbols.
+     * 
+     * 1. Initialize an empty result set.
+     * 2. If the sequence is empty, add epsilon to the result and return.
+     * 3. Iterate through the symbols `X` in the sequence:
+     *     a. Get `FIRST(X)` from the pre-calculated `firstSets`.
+     *     b. Add all symbols from `FIRST(X)` to the result, except for epsilon.
+     *     c. If `FIRST(X)` does not contain epsilon, stop and break the loop.
+     *     d. If it does contain epsilon and this is the last symbol in the sequence, add epsilon to the result set.
+     *  4. Return the result set.
      */
     private Set<Symbol> computeFirstOfSequence(List<Symbol> seq, Map<Symbol, Set<Symbol>> firstSets, Symbol epsilon) {
-        // TODO: Implement the logic to compute the FIRST set for a sequence of symbols.
+        
         // 1. Initialize an empty result set.
+        HashSet<Symbol> res = new HashSet<>();
+        
         // 2. If the sequence is empty, add epsilon to the result and return.
+        if( seq.isEmpty() ){
+            res.add(epsilon);
+            return res;
+        }
+
+        boolean hasEpsilon;
+        int reachedSymbols = 0;
+        Set<Symbol> first;
+
         // 3. Iterate through the symbols `X` in the sequence:
-        //    a. Get `FIRST(X)` from the pre-calculated `firstSets`.
-        //    b. Add all symbols from `FIRST(X)` to the result, except for epsilon.
-        //    c. If `FIRST(X)` does not contain epsilon, stop and break the loop.
-        //    d. If it does contain epsilon and this is the last symbol in the sequence, add epsilon to the result set.
+        for( Symbol symbol : seq ){
+            ++reachedSymbols;
+
+            // a. Get `FIRST(X)` from the pre-calculated `firstSets`.
+            first = firstSets.get( symbol );
+
+            // b. Add all symbols from `FIRST(X)` to the result, except for epsilon.
+            hasEpsilon = first.remove(epsilon);
+            res.addAll(first);
+
+            // c. If `FIRST(X)` does not contain epsilon, stop and break the loop.
+            if( !hasEpsilon ){
+                break;
+            }
+
+            // d. If it does contain epsilon and this is the last symbol in the sequence, add epsilon to the result set.
+            if( reachedSymbols == seq.size() ){
+                res.add(epsilon);
+            }
+        }
         // 4. Return the result set.
-        return new HashSet<>(); // Placeholder
+        return res;
     }
 
     /**
