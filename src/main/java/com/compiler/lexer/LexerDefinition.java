@@ -47,11 +47,24 @@ public class LexerDefinition {
             if (i > 0) sb.append(',');
             char c = alphabet.get(i);
             sb.append('"');
+            // switch (c) {
+            //     case '\\' -> sb.append("\\\\");
+            //     case '"' -> sb.append("\\\"");
+            //     default -> sb.append(c);
+            // }
             switch (c) {
-                case '\\' -> sb.append("\\\\");
-                case '"' -> sb.append("\\\"");
-                default -> sb.append(c);
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                default:
+                    sb.append(c);
+                    break;
             }
+            
+
             sb.append('"');
         }
         sb.append(']');
