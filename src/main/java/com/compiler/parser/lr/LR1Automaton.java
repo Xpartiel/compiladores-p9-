@@ -14,6 +14,7 @@ import java.util.Set;
 import com.compiler.parser.grammar.Grammar;
 import com.compiler.parser.grammar.Production;
 import com.compiler.parser.grammar.Symbol;
+import com.compiler.parser.grammar.SymbolType;
 import com.compiler.parser.syntax.StaticAnalyzer;
 
 /**
@@ -66,15 +67,15 @@ public class LR1Automaton {
         HashSet<Set<Symbol>> first = calc.getFirstSets();
 
         // 4. While the worklist is not empty:
-        //Paso 4:
+        // Paso 4:
         while (!worklist.isEmpty()){
 
-            //    a. Dequeue an item `[A -> α • B β, a]`.
+            // a. Dequeue an item `[A -> α • B β, a]`.
             LR1Item item = worklist.poll();
 
-            //    b. If `B` is a non-terminal:
+            // b. If `B` is a non-terminal:
             Symbol characterB= item.getSymbolAfterDot();
-            if(characterB != null && characterB.type==NON_TERMINAL){ //puede ser que sea necesario verificar que no sea null
+            if( (characterB != null) && (characterB.type == SymbolType.NON_TERMINAL) ){ //puede ser que sea necesario verificar que no sea null
 
                 //Primero obtenemos todas las producciones de B
                 LinkedList<Production> productionsB = new LinkedList<>();
@@ -83,7 +84,7 @@ public class LR1Automaton {
                         productionsB.add(prod);
                     }
                 }
-                //       i. For each production of `B` (e.g., `B -> γ`):
+                // i. For each production of `B` (e.g., `B -> γ`):
                 for (Production production : productionsB){
                     //necesitamos un metodo auxilar que devuelva una secuencia (Lista de simbolos) a
                     //partir de la posicion del punto (aunque luego eliminaremos el final o el primero
@@ -170,16 +171,55 @@ public class LR1Automaton {
     }
 
     /**
+     * Auxiliar method that helps us find the symbol sequence after the
+     * {@code dotPosition} from an {@link LR1Item}
+     * @param item
+     * @return
+     */
+    private LinkedList<Symbol> productionPostDot( LR1Item item ){
+        // Initialize empty listing
+        LinkedList<Symbol> res = new LinkedList<>();
+
+        List<Symbol> productions = item.production.getRight();
+        for (int i = item.dotPosition; i < productions.size(); i++){
+            res.add( productions.get(i) );
+        }
+        return res;
+    }
+
+    /**
      * GOTO for LR(1): moves dot over symbol and takes closure.
+     * 
+     * 1. Initialize an empty set `movedItems`.
+     * 2. For each item `[A -> α • X β, a]` in the input `state`:
+     *    a. If `X` is equal to the input `symbol`:
+     *       - Add the new item `[A -> α X • β, a]` to `movedItems`.
+     * 3. Return the `closure` of `movedItems`.
      */
     private Set<LR1Item> goTo(Set<LR1Item> state, Symbol symbol) {
-        // TODO: Implement the GOTO function.
+
         // 1. Initialize an empty set `movedItems`.
+        HashSet<LR1Item> movedItems = new HashSet<>();
+        List<Symbol> postDot;
+        Symbol X;
+
         // 2. For each item `[A -> α • X β, a]` in the input `state`:
-        //    a. If `X` is equal to the input `symbol`:
-        //       - Add the new item `[A -> α X • β, a]` to `movedItems`.
+        for ( LR1Item item : state ) {
+
+            postDot = this.productionPostDot(item);
+            // a. If `X` is equal to the input `symbol`:
+            X = postDot.remove(0);
+            if( X.equals(symbol) ){
+                // - Add the new item `[A -> α X • β, a]` to `movedItems`.
+                movedItems.add( new LR1Item(
+                    item.production,
+                    item.dotPosition+1,
+                    item.lookahead));
+            }
+        }
+
         // 3. Return the `closure` of `movedItems`.
-        return new HashSet<>(); // Placeholder
+        return closure(movedItems);
     }
 
     /**
