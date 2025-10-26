@@ -1,15 +1,20 @@
 package com.compiler.parser.lr;
 
+import java.nio.file.ProviderNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 
 import com.compiler.parser.grammar.Grammar;
+import com.compiler.parser.grammar.Production;
 import com.compiler.parser.grammar.Symbol;
+import com.compiler.parser.syntax.StaticAnalyzer;
 
 /**
  * Builds the canonical collection of LR(1) items (the DFA automaton).
@@ -32,7 +37,6 @@ public class LR1Automaton {
      * CLOSURE for LR(1): standard algorithm using FIRST sets to compute lookaheads for new items.
      */
     private Set<LR1Item> closure(Set<LR1Item> items) {
-        // TODO: Implement the CLOSURE algorithm for a set of LR(1) items.
         // 1. Initialize a new set `closure` with the given `items`.
         // 2. Create a worklist (like a Queue or List) and add all items from `items` to it.
         // 3. Pre-calculate the FIRST sets for all symbols in the grammar.
@@ -47,6 +51,69 @@ public class LR1Automaton {
         //               - Add it to `closure`.
         //               - Enqueue it to the worklist.
         // 5. Return the `closure` set.
+
+
+        //Paso 1:
+        HashSet<LR1Item> closure = new HashSet<>(items);
+        
+        //Paso 2:
+        Queue<LR1Item> worklist = new LinkedList<>(items);
+
+        //Paso3: 
+        //para calcular el first
+        StaticAnalyzer calc = new StaticAnalyzer(grammar);
+        //calculamos el first de toda la gramatica.
+        HashSet<Set<Symbol>> first = calc.getFirstSets();
+
+        // 4. While the worklist is not empty:
+        //Paso 4:
+        while (!worklist.isEmpty()){
+
+            //    a. Dequeue an item `[A -> α • B β, a]`.
+            LR1Item item = worklist.poll();
+
+            //    b. If `B` is a non-terminal:
+            Symbol characterB= item.getSymbolAfterDot();
+            if(characterB != null && characterB.type==NON_TERMINAL){ //puede ser que sea necesario verificar que no sea null
+
+                //Primero obtenemos todas las producciones de B
+                LinkedList<Production> productionsB = new LinkedList<>();
+                for (Production prod : this.grammar.getProductions()){
+                    if (prod.left.equals(characterB)){
+                        productionsB.add(prod);
+                    }
+                }
+                //       i. For each production of `B` (e.g., `B -> γ`):
+                for (Production production : productionsB){
+                    //necesitamos un metodo auxilar que devuelva una secuencia (Lista de simbolos) a
+                    //partir de la posicion del punto (aunque luego eliminaremos el final o el primero
+                    //segun donde este el simbolo B).
+
+                }
+                //          - Calculate the FIRST set of the sequence `βa`. This will be the lookahead for the new item.
+                //          - For each terminal `b` in FIRST(βa):
+                //             - Create a new item `[B -> • γ, b]`.
+                //             - If this new item is not already in the `closure` set:
+                //               - Add it to `closure`.
+                //               - Enqueue it to the worklist.
+            }
+
+            
+        }
+
+        
+        
+        
+        // 5. Return the `closure` set.
+
+
+
+
+
+
+
+
+
         return new HashSet<>(); // Placeholder
     }
 
