@@ -25,11 +25,20 @@ public class LR1Item {
      * Returns the symbol after the dot, or null if the dot is at the end.
      */
     public Symbol getSymbolAfterDot() {
-        // TODO: Implement the logic to get the symbol after the dot.
         // 1. Check if the dotPosition is within the bounds of the production's right-hand side list.
         // 2. If it is (i.e., dotPosition < production.right.size()), return the symbol at that index.
         // 3. Otherwise, the dot is at the end, so return null.
-        return null; // Placeholder
+
+        //Step1: 
+        //tenemos que revisar el lado derecho de la produccion, ver donde esta el punto y si esta dentro 
+        //de los limites del lado derecho de la produccion.
+        
+        //primero revisamos si el punto esta dentro del limite del tamaño.
+        if(this.dotPosition < this.production.getRight().size()){
+            return production.getRight().get(dotPosition);
+        }
+
+        return null; // dotPosition out of bounds.
     }
 
     @Override
@@ -37,6 +46,7 @@ public class LR1Item {
         if (this == obj) return true;
         if (!(obj instanceof LR1Item)) return false;
         LR1Item other = (LR1Item) obj;
+        // 
         return production.equals(other.production) && dotPosition == other.dotPosition && lookahead.equals(other.lookahead);
     }
 
