@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import com.compiler.parser.grammar.Grammar;
 import com.compiler.parser.grammar.Production;
@@ -28,6 +29,8 @@ public class LR1Automaton {
 
     //simbolo auxiliar epsilon.
     Symbol epsilon =  new Symbol("epsilon", SymbolType.TERMINAL);
+    //Simbolo auxiliar dollar.
+    Symbol dollar = new Symbol("$", SymbolType.TERMINAL);
 
     public LR1Automaton(Grammar grammar) {
         this.grammar = Objects.requireNonNull(grammar);
@@ -218,7 +221,7 @@ public class LR1Automaton {
             postDot = this.productionPostDot(item);
             // a. If `X` is equal to the input `symbol`:
             if( !postDot.isEmpty() ){
-                X = postDot.removeFirst();
+                X = postDot.remove(0);
                 if( X.equals(symbol) ){
                 // - Add the new item `[A -> α X • β, a]` to `movedItems`.
                 movedItems.add( new LR1Item(
@@ -252,10 +255,82 @@ public class LR1Automaton {
      */
     public void build() {
 
+        //1.Eliminamos todas los estados y transiciones.
         this.states.clear();
         this.transitions.clear();
 
+        //2.Create the augmented grammar: Add a new start symbol S' and production S' -> S.
+        //Creamos el nuevo simbolo.
+        Symbol start = grammar.getStartSymbol();
+        Symbol primeStart = new Symbol(start.name + "'", SymbolType.NON_TERMINAL);
+        this.augmentedLeftName = primeStart.name;
 
+        //Creamos la nueva regla de produción.
+        Production primeProduction= new Production(primeStart, List.of(start));
+
+        //3. Create the initial item: `[S' -> • S, $]`.
+        LR1Item initialItem = new LR1Item(primeProduction, 0, dollar);
+
+        //4. The first state, `I0`, is the `closure` of this initial item set. Add `I0` to the list of states.
+        Set<LR1Item> I0 = closure(Set.of(initialItem));
+        states.add(I0);
+
+        //5. Create a worklist (queue) and add `I0` to it.
+        Queue<Set<LR1Item>> workList = new LinkedList<>();
+        workList.add(I0);
+
+        //Simbolos de la gramatica (los usaremos dentro del bucle)
+        //Dado que no tenemos un metodo que devuelva todos los simbolos de la gramatica
+        //unimos los dos conjuntos de simboloes terminales y no terminales en uno solo.
+        Set<Symbol>grammarSymbols = new HashSet<>(this.grammar.getNonTerminals());
+        grammarSymbols.addAll(this.grammar.getTerminals());
+
+        while (!workList.isEmpty()){
+            //a
+            Set<LR1Item> stateI = workList.poll();
+            int iIndex = states.indexOf(stateI);
+
+            //b
+            for (Symbol x : grammarSymbols){
+                //i
+                Set<LR1Item> j = this.goTo(stateI, x);
+                //ii
+                if (!j.isEmpty()) {
+
+                    //si j ya existe en la lista de estados, solo recuperamos su indice.
+                    int jIndex = -1;
+                    for (int k = 0; k < states.size(); k++){
+                        if (states.get(k).equals(j)){
+                            jIndex = k;
+                            break;
+                        }
+                    }
+
+                    //Si el indice no cambia, quiere decir que es un nuevo estado.
+                    if (jIndex == -1) {
+                        states.add(j);
+                        workList.add(j);
+                        jIndex = states.size() - 1;
+                    }
+
+                    //iii
+                    //Creamos la nueva transicion.
+                    //Si ya existe un valor para la clave iIndex, agregale el mapeo
+                    //si no existe un valor para cla clave iIndex, crealo y agregale el mapeo.
+                    //Estoy en el estado iIndex y me muevo con el simbolo x al estado jindex.
+                    this.transitions.computeIfAbsent(iIndex, k -> new HashMap<>()).put(x,jIndex);
+
+                }
+            }
+        }
+
+        //Para poder revisar si los estados estan correctos:
+        for (int i = 0; i < states.size(); i++) {
+            System.out.println("Estado I" + i + ":");
+            for (LR1Item item : states.get(i)) {
+                System.out.println("   " + item);
+            }
+        }
     }
 
     public String getAugmentedLeftName() { return augmentedLeftName; }
