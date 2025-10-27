@@ -28,9 +28,9 @@ public class LR1Automaton {
     private String augmentedLeftName = null;
 
     //simbolo auxiliar epsilon.
-    Symbol epsilon =  new Symbol("epsilon", SymbolType.TERMINAL);
+    public Symbol epsilon =  new Symbol("epsilon", SymbolType.TERMINAL);
     //Simbolo auxiliar dollar.
-    Symbol dollar = new Symbol("$", SymbolType.TERMINAL);
+    public Symbol dollar = new Symbol("$", SymbolType.TERMINAL);
 
     public LR1Automaton(Grammar grammar) {
         this.grammar = Objects.requireNonNull(grammar);

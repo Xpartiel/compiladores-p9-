@@ -1,5 +1,14 @@
 package com.compiler.parser.lr;
 
+import java.util.Set;
+
+import com.compiler.parser.grammar.Production;
+import com.compiler.parser.grammar.Symbol;
+import com.compiler.parser.grammar.SymbolType;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+
 /**
  * Builds the LALR(1) parsing table (ACTION/GOTO).
  * Main task for Practice 9.
@@ -21,6 +30,7 @@ public class LALR1Table {
         private Action(Type type, Integer state, com.compiler.parser.grammar.Production prod) {
             this.type = type; this.state = state; this.reduceProd = prod;
         }
+        
 
         public static Action shift(int s) { return new Action(Type.SHIFT, s, null); }
         public static Action reduce(com.compiler.parser.grammar.Production p) { return new Action(Type.REDUCE, null, p); }
@@ -89,6 +99,88 @@ public class LALR1Table {
         //    - For each state `s`, look at its transitions in `lalrTransitions`.
         //    - For each transition on a NON-TERMINAL symbol `B` to state `t`:
         //    - Set `gotoTable[s][B] = t`.
+
+
+        // 1. Clear the action, gotoTable, and conflicts lists.
+        action.clear();
+        gotoTable.clear();
+        conflicts.clear();
+
+        // 2. Iterate through each LALR state `s` from 0 to lalrStates.size() - 1.
+        for (int s=0;s<=lalrStates.size()-1;s++){
+            // 3. For each state `s`, iterate through its LR1Item `it`.
+            Set<LR1Item> state = lalrStates.get(s);
+
+            for (LR1Item item : state){
+                //    a. Get the symbol after the dot, `X = it.getSymbolAfterDot()`.
+                Symbol x = item.getSymbolAfterDot();
+
+                //    b. If `X` is a terminal (SHIFT action):
+                if (x!=null && x.type==SymbolType.TERMINAL){
+                    //- Find the destination state `t` from `lalrTransitions.get(s).get(X)`.
+                    Integer t = null;
+                    if (lalrTransitions.containsKey(s)) {
+                        t = lalrTransitions.get(s).get(x);
+                    }
+
+                    //Si no hay transición, simplemente continúa
+                    if (t == null) continue;
+
+                    //- Check for conflicts: if action table already has an entry for `[s, X]`, it's a conflict.
+                    //Asegurar que la fila de acciones para este estado exista
+                    Map<Symbol, Action> row = action.computeIfAbsent(s, k -> new HashMap<>());
+
+                    //Verificamos que exista una transicion con x
+                    if (row.containsKey(x)) {
+                        //si existe, entonces hay un conflicto.
+                        conflicts.add("Conflict in state: " +s+ " on terminal: " +x);
+                    }else {
+                        //- Otherwise, set `action[s][X] = SHIFT(t)`.
+                        row.put(x, Action.shift(t));
+                    }   
+                }
+
+                //    c. If the dot is at the end of the production (`X` is null) (REDUCE or ACCEPT action):
+                //       - This is an item like `[A -> α •, a]`.
+                //       - If it's the augmented start production (`S' -> S •`) and lookahead is `$`, this is an ACCEPT action.
+                //         - Set `action[s][$] = ACCEPT`.
+                //       - Otherwise, it's a REDUCE action.
+                //         - For the lookahead symbol `a` in the item:
+                //         - Check for conflicts: if `action[s][a]` is already filled, report a Shift/Reduce or Reduce/Reduce conflict.
+                //         - Otherwise, set `action[s][a] = REDUCE(A -> α)`.
+
+                if (x==null) {
+                    //Obtener el string de S'
+                    String sPrime = this.automaton.getAugmentedLeftName();
+                    //obtener el simbolo S'
+                    Symbol initialSymbolPrime = new Symbol(sPrime, SymbolType.NON_TERMINAL);
+                    //obtener el simbolo S
+                    int index= sPrime.indexOf("'");
+                    String sInitial= sPrime.substring(0,index);
+                    //crear el simbolo.
+                    Symbol sSymbol = new Symbol(sInitial, SymbolType.NON_TERMINAL);
+
+                    //Ahora hay que construir la produccion.
+                    //S'-> S
+                    Production prod = new Production(initialSymbolPrime, List.of(sSymbol));
+
+                    if (item.production.equals(prod)&& item.lookahead.equals(this.automaton.dollar)){
+                        //Si la produccion es del tipo S' -> S y el lookahead es "$", aceptamos.
+                        //- Set `action[s][$] = ACCEPT`.
+                        
+
+                        
+                    }
+
+                    
+                }
+
+            }
+
+            
+            
+        }
+
     }
     
     // ... (Getters and KernelEntry class can remain as is)
