@@ -1,6 +1,5 @@
 package com.compiler.parser.lr;
 
-import java.nio.file.ProviderNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,24 +38,23 @@ public class LR1Automaton {
 
     /**
      * CLOSURE for LR(1): standard algorithm using FIRST sets to compute lookaheads for new items.
+     * 
+     * 1. Initialize a new set `closure` with the given `items`.
+     * 2. Create a worklist (like a Queue or List) and add all items from `items` to it.
+     * 3. Pre-calculate the FIRST sets for all symbols in the grammar.
+     * 4. While the worklist is not empty:
+     *    a. Dequeue an item `[A -> α • B β, a]`.
+     *    b. If `B` is a non-terminal:
+     *       i. For each production of `B` (e.g., `B -> γ`):
+     *          - Calculate the FIRST set of the sequence `βa`. This will be the lookahead for the new item.
+     *          - For each terminal `b` in FIRST(βa):
+     *             - Create a new item `[B -> • γ, b]`.
+     *             - If this new item is not already in the `closure` set:
+     *               - Add it to `closure`.
+     *               - Enqueue it to the worklist.
+     *  5. Return the `closure` set.
      */
     private Set<LR1Item> closure(Set<LR1Item> items) {
-        // 1. Initialize a new set `closure` with the given `items`.
-        // 2. Create a worklist (like a Queue or List) and add all items from `items` to it.
-        // 3. Pre-calculate the FIRST sets for all symbols in the grammar.
-        // 4. While the worklist is not empty:
-        //    a. Dequeue an item `[A -> α • B β, a]`.
-        //    b. If `B` is a non-terminal:
-        //       i. For each production of `B` (e.g., `B -> γ`):
-        //          - Calculate the FIRST set of the sequence `βa`. This will be the lookahead for the new item.
-        //          - For each terminal `b` in FIRST(βa):
-        //             - Create a new item `[B -> • γ, b]`.
-        //             - If this new item is not already in the `closure` set:
-        //               - Add it to `closure`.
-        //               - Enqueue it to the worklist.
-        // 5. Return the `closure` set.
-
-
         //Paso 1:
         HashSet<LR1Item> closure = new HashSet<>(items);
         
@@ -94,9 +92,12 @@ public class LR1Automaton {
                     //segun donde este el simbolo B).
 
                     //obtenemos la secuencia despues del punto.
-                    LinkedList<Symbol>seq=this.productionPostDot(item);
+                    LinkedList<Symbol> seq =this.productionPostDot(item);
                     //Eliminamos B para obtener la secuencia a partir de Beta
-                    seq.remove(0);
+                    if( !seq.isEmpty() ){
+                        seq.removeFirst();
+                    }
+                    
                     //Añadimos el lookahead a la secuencia despues de beta.
                     seq.add(item.lookahead);
                     
@@ -118,11 +119,8 @@ public class LR1Automaton {
                         }
                         
                     }
-
-
-
-                }   
-            }            
+                }
+            } 
         }
         
         // 5. Return the `closure` set.
@@ -161,7 +159,7 @@ public class LR1Automaton {
             ++reachedSymbols;
 
             // a. Get `FIRST(X)` from the pre-calculated `firstSets`.
-            first = firstSets.get( symbol );
+            first = new HashSet<>( firstSets.get( symbol ) );
 
             // b. Add all symbols from `FIRST(X)` to the result, except for epsilon.
             hasEpsilon = first.remove(epsilon);
@@ -219,13 +217,15 @@ public class LR1Automaton {
 
             postDot = this.productionPostDot(item);
             // a. If `X` is equal to the input `symbol`:
-            X = postDot.remove(0);
-            if( X.equals(symbol) ){
+            if( !postDot.isEmpty() ){
+                X = postDot.removeFirst();
+                if( X.equals(symbol) ){
                 // - Add the new item `[A -> α X • β, a]` to `movedItems`.
                 movedItems.add( new LR1Item(
                     item.production,
                     item.dotPosition+1,
                     item.lookahead));
+                }
             }
         }
 
@@ -235,22 +235,27 @@ public class LR1Automaton {
 
     /**
      * Build the LR(1) canonical collection: states and transitions.
+     * 
+     * 1. Clear any existing states and transitions.
+     * 2. Create the augmented grammar: Add a new start symbol S' and production S' -> S.
+     * 3. Create the initial item: `[S' -> • S, $]`.
+     * 4. The first state, `I0`, is the `closure` of this initial item set. Add `I0` to the list of states.
+     * 5. Create a worklist (queue) and add `I0` to it.
+     * 6. While the worklist is not empty:
+     *    a. Dequeue a state `I`.
+     *    b. For each grammar symbol `X`:
+     *       i. Calculate `J = goTo(I, X)`.
+     *       ii. If `J` is not empty and not already in the list of states:
+     *          - Add `J` to the list of states.
+     *          - Enqueue `J` to the worklist.
+     *       iii. Create a transition from the index of state `I` to the index of state `J` on symbol `X`.
      */
     public void build() {
-        // TODO: Implement the construction of the canonical collection of LR(1) item sets (the DFA).
-        // 1. Clear any existing states and transitions.
-        // 2. Create the augmented grammar: Add a new start symbol S' and production S' -> S.
-        // 3. Create the initial item: `[S' -> • S, $]`.
-        // 4. The first state, `I0`, is the `closure` of this initial item set. Add `I0` to the list of states.
-        // 5. Create a worklist (queue) and add `I0` to it.
-        // 6. While the worklist is not empty:
-        //    a. Dequeue a state `I`.
-        //    b. For each grammar symbol `X`:
-        //       i. Calculate `J = goTo(I, X)`.
-        //       ii. If `J` is not empty and not already in the list of states:
-        //          - Add `J` to the list of states.
-        //          - Enqueue `J` to the worklist.
-        //       iii. Create a transition from the index of state `I` to the index of state `J` on symbol `X`.
+
+        this.states.clear();
+        this.transitions.clear();
+
+
     }
 
     public String getAugmentedLeftName() { return augmentedLeftName; }
