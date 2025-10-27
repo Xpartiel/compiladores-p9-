@@ -144,6 +144,7 @@ public class LALR1Table {
                 //       - This is an item like `[A -> α •, a]`.
                 //       - If it's the augmented start production (`S' -> S •`) and lookahead is `$`, this is an ACCEPT action.
                 //         - Set `action[s][$] = ACCEPT`.
+                //AQUI NOS QUEDAMOS, FALTA LO DE ABAJO.
                 //       - Otherwise, it's a REDUCE action.
                 //         - For the lookahead symbol `a` in the item:
                 //         - Check for conflicts: if `action[s][a]` is already filled, report a Shift/Reduce or Reduce/Reduce conflict.
@@ -167,9 +168,9 @@ public class LALR1Table {
                     if (item.production.equals(prod)&& item.lookahead.equals(this.automaton.dollar)){
                         //Si la produccion es del tipo S' -> S y el lookahead es "$", aceptamos.
                         //- Set `action[s][$] = ACCEPT`.
-                        
 
-                        
+                        Map<Symbol, Action> row = action.computeIfAbsent(s, k -> new HashMap<>());
+                        row.put(x, Action.accept());
                     }
 
                     
