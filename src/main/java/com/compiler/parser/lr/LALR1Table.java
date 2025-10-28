@@ -1,13 +1,13 @@
 package com.compiler.parser.lr;
 
-import java.util.Set;
-
-import com.compiler.parser.grammar.Production;
 import com.compiler.parser.grammar.Symbol;
+import com.compiler.parser.grammar.Production;
 import com.compiler.parser.grammar.SymbolType;
+import java.util.Set;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * Builds the LALR(1) parsing table (ACTION/GOTO).
@@ -17,29 +17,29 @@ public class LALR1Table {
     private final LR1Automaton automaton;
 
     // merged LALR states and transitions
-    private java.util.List<java.util.Set<LR1Item>> lalrStates = new java.util.ArrayList<>();
-    private java.util.Map<Integer, java.util.Map<com.compiler.parser.grammar.Symbol, Integer>> lalrTransitions = new java.util.HashMap<>();
+    private List<Set<LR1Item>> lalrStates = new ArrayList<>();
+    private Map<Integer, Map<Symbol, Integer>> lalrTransitions = new HashMap<>();
     
     // ACTION table: state -> terminal -> Action
     public static class Action {
         public enum Type { SHIFT, REDUCE, ACCEPT }
         public final Type type;
         public final Integer state; // for SHIFT
-        public final com.compiler.parser.grammar.Production reduceProd; // for REDUCE
+        public final Production reduceProd; // for REDUCE
 
-        private Action(Type type, Integer state, com.compiler.parser.grammar.Production prod) {
+        private Action(Type type, Integer state, Production prod) {
             this.type = type; this.state = state; this.reduceProd = prod;
         }
         
 
         public static Action shift(int s) { return new Action(Type.SHIFT, s, null); }
-        public static Action reduce(com.compiler.parser.grammar.Production p) { return new Action(Type.REDUCE, null, p); }
+        public static Action reduce(Production p) { return new Action(Type.REDUCE, null, p); }
         public static Action accept() { return new Action(Type.ACCEPT, null, null); }
     }
 
-    private final java.util.Map<Integer, java.util.Map<com.compiler.parser.grammar.Symbol, Action>> action = new java.util.HashMap<>();
-    private final java.util.Map<Integer, java.util.Map<com.compiler.parser.grammar.Symbol, Integer>> gotoTable = new java.util.HashMap<>();
-    private final java.util.List<String> conflicts = new java.util.ArrayList<>();
+    private final Map<Integer, Map<Symbol, Action>> action = new HashMap<>();
+    private final Map<Integer, Map<Symbol, Integer>> gotoTable = new HashMap<>();
+    private final List<String> conflicts = new ArrayList<>();
     private int initialState = 0;
 
     public LALR1Table(LR1Automaton automaton) {
@@ -217,13 +217,13 @@ public class LALR1Table {
     }
     
     // ... (Getters and KernelEntry class can remain as is)
-    public java.util.Map<Integer, java.util.Map<com.compiler.parser.grammar.Symbol, Action>> getActionTable() { return action; }
-    public java.util.Map<Integer, java.util.Map<com.compiler.parser.grammar.Symbol, Integer>> getGotoTable() { return gotoTable; }
-    public java.util.List<String> getConflicts() { return conflicts; }
+    public Map<Integer, Map<Symbol, Action>> getActionTable() { return action; }
+    public Map<Integer, Map<Symbol, Integer>> getGotoTable() { return gotoTable; }
+    public List<String> getConflicts() { return conflicts; }
     private static class KernelEntry {
-        public final com.compiler.parser.grammar.Production production;
+        public final Production production;
         public final int dotPosition;
-        KernelEntry(com.compiler.parser.grammar.Production production, int dotPosition) {
+        KernelEntry(Production production, int dotPosition) {
             this.production = production;
             this.dotPosition = dotPosition;
         }
@@ -241,7 +241,7 @@ public class LALR1Table {
             return r;
         }
     }
-    public java.util.List<java.util.Set<LR1Item>> getLALRStates() { return lalrStates; }
-    public java.util.Map<Integer, java.util.Map<com.compiler.parser.grammar.Symbol, Integer>> getLALRTransitions() { return lalrTransitions; }
+    public List<Set<LR1Item>> getLALRStates() { return lalrStates; }
+    public Map<Integer, Map<Symbol, Integer>> getLALRTransitions() { return lalrTransitions; }
     public int getInitialState() { return initialState; }
 }
