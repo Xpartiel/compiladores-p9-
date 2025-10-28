@@ -78,7 +78,6 @@ public class LALR1Table {
     }
 
     private void fillActionGoto() {
-        // TODO: Populate the ACTION and GOTO tables based on the LALR states and transitions.
         // 1. Clear the action, gotoTable, and conflicts lists.
         // 2. Iterate through each LALR state `s` from 0 to lalrStates.size() - 1.
         // 3. For each state `s`, iterate through its LR1Item `it`.
@@ -144,12 +143,10 @@ public class LALR1Table {
                 //       - This is an item like `[A -> α •, a]`.
                 //       - If it's the augmented start production (`S' -> S •`) and lookahead is `$`, this is an ACCEPT action.
                 //         - Set `action[s][$] = ACCEPT`.
-                //AQUI NOS QUEDAMOS, FALTA LO DE ABAJO.
                 //       - Otherwise, it's a REDUCE action.
                 //         - For the lookahead symbol `a` in the item:
                 //         - Check for conflicts: if `action[s][a]` is already filled, report a Shift/Reduce or Reduce/Reduce conflict.
                 //         - Otherwise, set `action[s][a] = REDUCE(A -> α)`.
-
                 if (x==null) {
                     //Obtener el string de S'
                     String sPrime = this.automaton.getAugmentedLeftName();
@@ -165,23 +162,58 @@ public class LALR1Table {
                     //S'-> S
                     Production prod = new Production(initialSymbolPrime, List.of(sSymbol));
 
+                    //Para verificar si el action ya contiene un elemento.
+                    Map<Symbol, Action> row = action.computeIfAbsent(s, k -> new HashMap<>());
+
                     if (item.production.equals(prod)&& item.lookahead.equals(this.automaton.dollar)){
                         //Si la produccion es del tipo S' -> S y el lookahead es "$", aceptamos.
                         //- Set `action[s][$] = ACCEPT`.
-
-                        Map<Symbol, Action> row = action.computeIfAbsent(s, k -> new HashMap<>());
-                        row.put(x, Action.accept());
+                        row.put(this.automaton.dollar, Action.accept());
+                    }else{
+                        //       - Otherwise, it's a REDUCE action.
+                        //         - For the lookahead symbol `a` in the item:
+                        //         - Check for conflicts: if `action[s][a]` is already filled, report a Shift/Reduce or Reduce/Reduce conflict.
+                        if (row.containsKey(item.lookahead)){
+                            //reportar el conflicto.
+                            Action existing = row.get(item.lookahead);
+                            conflicts.add("Conflict in state " + s + " on lookahead " + item.lookahead +
+                                      " between " + existing.type + " and REDUCE(" + item.production + ")");
+                        }else{
+                            //         - Otherwise, set `action[s][a] = REDUCE(A -> α)`.
+                            row.put(item.lookahead, Action.reduce(item.production));
+                        }
                     }
-
-                    
                 }
-
             }
-
-            
-            
         }
+        //Aqui va el paso 4.
+        // 4. Populate the GOTO table.
+        //    - For each state `s`, look at its transitions in `lalrTransitions`.
+        //Para cada estado, tengo que revisar sus lalrtransiciones.
+            for (int s=0;s<=lalrStates.size()-1;s++){
+                //Obtengo las transiciones del estado.
+                Map<Symbol, Integer> transitions = lalrTransitions.get(s);
+                //Si no hay transiciones, continua.
+                if (transitions == null) continue;
 
+                //Nos aseguramos de que haya un mapeo para el valor de la llave
+                Map<Symbol, Integer> gotoRow = gotoTable.computeIfAbsent(s, k -> new HashMap<>());
+
+                //- For each transition on a NON-TERMINAL symbol `B` to state `t`:
+                //Para cada transicion, reviso cuales son no terminales.
+                for (Map.Entry<Symbol, Integer> entry : transitions.entrySet()){
+                    Symbol symbol = entry.getKey();
+                    Integer t = entry.getValue();
+                    
+                    //si la llave es un simbolo no terminal.
+                    if (symbol.type == SymbolType.NON_TERMINAL) {
+                        //    - Set `gotoTable[s][B] = t`.
+                        //poblamos la tabla del goto.
+                        gotoRow.put(symbol, t);
+                    }
+                }
+                
+            }
     }
     
     // ... (Getters and KernelEntry class can remain as is)
