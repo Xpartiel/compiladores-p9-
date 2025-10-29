@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.ArrayList;
 
 /**
@@ -49,23 +51,68 @@ public class LALR1Table {
     /**
      * Builds the LALR(1) parsing table.
      */
-    public void build() {
-        // TODO: Implement the LALR(1) table construction logic.
+    public void build(){
         // This is a multi-step process.
-        
         // Step 1: Ensure the underlying LR(1) automaton is built.
-        // automaton.build();
+        automaton.build();
+        //automaton.getStates();
+        
 
         // Step 2: Merge LR(1) states to create LALR(1) states.
         //  a. Group LR(1) states that have the same "kernel" (the set of LR(0) items).
         //     - A kernel item is an LR(1) item without its lookahead.
         //     - Create a map from a kernel (Set<KernelEntry>) to a list of state IDs that share that kernel.
+        /*
+         * CREAR UN MAPEO QUE RECIBA UN kernel entry, y devuelva una lista de id de estados
+         * que compartan dicho kernel.
+         * 
+         * por cada estado, debo agregar su kernel al mapeo (usa computeIfAbsent para crear la lista)
+         * como llave, y en el valor (lista) debo agregar el id del estado.
+         * 
+         * Esto quiere decir que vpy a ocupar el indice del for, por tanto no puedo usar for each.
+         * De momento queda en duda porque queremos un set de kernel entry. 
+         * 
+         */
+        
+        HashMap<Set<KernelEntry>, List<Integer>> kernelStatesMap = new HashMap<>();
+
+
+        for (int s = 0; s < this.automaton.getStates().size(); s++){
+            //Obtengo el estado LR1
+            Set<LR1Item> stateLR1=automaton.getStates().get(s);
+            //necesito crear un kernel entry por cada item y agregarlo al conjunto.
+            Set<KernelEntry> kernelStates = new HashSet<>();
+
+            for (LR1Item lr1Item : stateLR1){
+                //Creo el kernel entry y lo agrego al conjunto
+                kernelStates.add(new KernelEntry(lr1Item.production, lr1Item.dotPosition));                
+            }
+
+            //Agregamos el conjunto kernelStates como llave y le asignamos un valor.
+            kernelStatesMap.computeIfAbsent(kernelStates, k -> new LinkedList<>()).add(s);
+        }
+
+
         //  b. For each group of states with the same kernel:
         //     - Create a single new LALR(1) state.
         //     - This new state is formed by merging the LR(1) items from all states in the group.
         //     - Merging means for each kernel item, the new lookahead set is the union of all lookaheads for that item across the group.
         //     - Store these new LALR states in `lalrStates`.
+
+        /**
+         * Creamos un nuevo LALR(1) estado (un estado LALR1 es un conjunto de items de LR1), 
+         * para ello debemos iterar sobre los valores del diccionario KeyEntryStateMap
+         * obtener la lista de todos los elementos que comparten un kernel (es decir, el valor de 
+         * cada llave en el diccionario).
+         * Luego con dicha lista debemos obtener todos los item de los id de los estados contenidos
+         * dicha lista, y agregar todos esos item a un conjunto.
+         * 
+         * Por ultimo solo debemos agregar el nuevo estado LALR1 a la lista de estados LALR1.
+         */
+
+
         //  c. Create a mapping from old LR(1) state IDs to new LALR(1) state IDs.
+
 
         // Step 3: Build the transitions for the new LALR(1) automaton.
         //  - For each transition in the original LR(1) automaton `s -X-> t`:
@@ -75,6 +122,12 @@ public class LALR1Table {
 
         // Step 4: Fill the ACTION and GOTO tables based on the LALR automaton.
         //  - Call a helper method, e.g., `fillActionGoto()`.
+
+
+
+
+
+
     }
 
     private void fillActionGoto() {
