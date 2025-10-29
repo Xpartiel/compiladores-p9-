@@ -50,6 +50,30 @@ public class LALR1Table {
 
     /**
      * Builds the LALR(1) parsing table.
+     * 
+     * This is a multi-step process.
+     * 
+     * Step 1: Ensure the underlying LR(1) automaton is built.
+     *  automaton.build();
+     * 
+     * Step 2: Merge LR(1) states to create LALR(1) states.
+     *  a. Group LR(1) states that have the same "kernel" (the set of LR(0) items).
+     *      - A kernel item is an LR(1) item without its lookahead.
+     *      - Create a map from a kernel (Set<KernelEntry>) to a list of state IDs that share that kernel.
+     *  b. For each group of states with the same kernel:
+     *      - Create a single new LALR(1) state.
+     *      - This new state is formed by merging the LR(1) items from all states in the group.
+     *      - Merging means for each kernel item, the new lookahead set is the union of all lookaheads for that item across the group.
+     *      - Store these new LALR states in `lalrStates`.
+     *  c. Create a mapping from old LR(1) state IDs to new LALR(1) state IDs.
+     * 
+     * Step 3: Build the transitions for the new LALR(1) automaton.
+     *      - For each transition in the original LR(1) automaton `s -X-> t`:
+     *      - Add a new transition for the LALR automaton: `merged(s) -X-> merged(t)`.
+     *      - Use the mapping from step 2c to find the merged state IDs.
+     *      - Store these new transitions in `lalrTransitions`.
+     *  Step 4: Fill the ACTION and GOTO tables based on the LALR automaton.
+     *      - Call a helper method, e.g., `fillActionGoto()`.
      */
     public void build(){
         // This is a multi-step process.
@@ -71,21 +95,19 @@ public class LALR1Table {
          * 
          * Esto quiere decir que vpy a ocupar el indice del for, por tanto no puedo usar for each.
          * De momento queda en duda porque queremos un set de kernel entry. 
-         * 
          */
         
         HashMap<Set<KernelEntry>, List<Integer>> kernelStatesMap = new HashMap<>();
 
-
         for (int s = 0; s < this.automaton.getStates().size(); s++){
             //Obtengo el estado LR1
-            Set<LR1Item> stateLR1=automaton.getStates().get(s);
+            Set<LR1Item> stateLR1 = automaton.getStates().get(s);
             //necesito crear un kernel entry por cada item y agregarlo al conjunto.
             Set<KernelEntry> kernelState = new HashSet<>();
 
             for (LR1Item lr1Item : stateLR1){
                 //Creo el kernel entry y lo agrego al conjunto
-                kernelState.add(new KernelEntry(lr1Item.production, lr1Item.dotPosition));                
+                kernelState.add(new KernelEntry(lr1Item.production, lr1Item.dotPosition));
             }
 
             //Agregamos el conjunto kernelStates como llave y le asignamos un valor (el estado que lleva al 
@@ -100,7 +122,7 @@ public class LALR1Table {
         //     - Merging means for each kernel item, the new lookahead set is the union of all lookaheads for that item across the group.
         //     - Store these new LALR states in `lalrStates`.
 
-        /**
+        /*
          * Creamos un nuevo LALR(1) estado (un estado LALR1 es un conjunto de items de LR1), 
          * para ello debemos iterar sobre los valores del diccionario KeyEntryStateMap
          * obtener la lista de todos los elementos que comparten un kernel (es decir, el valor de 
@@ -109,7 +131,7 @@ public class LALR1Table {
          * dicha lista (un item por cada lookahead), y agregar todos esos item a un conjunto.
          * 
          * Por ultimo solo debemos agregar el nuevo estado LALR1 a la lista de estados LALR1.
-         */
+        */
         //Itero sobre las entradas del diccionario (clave, valor)
         for (Map.Entry<Set<KernelEntry>, List<Integer>> kernelStateEntry : kernelStatesMap.entrySet()){
             //por cada kernel, obtenemos su lista de estados (id).
@@ -126,11 +148,11 @@ public class LALR1Table {
             Map<KernelEntry, Set<Symbol>> mergedLookaheads = new HashMap<>();
             
             //necesitamos encontrar todos los lookahead.
-            for (Integer num: listId){
+            for ( Integer num : listId ){
                 //obtengo el estado
-                Set<LR1Item> conjuntoItems=this.automaton.getStates().get(num);
+                Set<LR1Item> conjuntoItems = this.automaton.getStates().get(num);
                 //obtengo todos los item del estado
-                for (LR1Item item : conjuntoItems){
+                for ( LR1Item item : conjuntoItems ){
                     //por cada item, agrego su llave (KernelEntry) y su lookahead
                     KernelEntry key = new KernelEntry(item.production, item.dotPosition);
                     mergedLookaheads.computeIfAbsent(key, k -> new HashSet<>()).add(item.lookahead);
@@ -140,7 +162,7 @@ public class LALR1Table {
             }
             //necesitamos construir todos los estados LALR1 (un item por cada lookahead).
             Set<LR1Item> lalrState = new HashSet<>();
-            for(Map.Entry<KernelEntry, Set<Symbol>> entryMerge : mergedLookaheads.entrySet()){
+            for( Map.Entry<KernelEntry, Set<Symbol>> entryMerge : mergedLookaheads.entrySet() ){
                 //obtengo el kernel Entry que comparten los lookaheads.
                 KernelEntry kernelCommon = entryMerge.getKey();
                 //obtengo los lookaheads que comparten un mismo kernel entry.
@@ -161,6 +183,17 @@ public class LALR1Table {
 
 
         //  c. Create a mapping from old LR(1) state IDs to new LALR(1) state IDs.
+        
+        Map<Integer,Integer> oldStateToNewState = new HashMap<>();
+        Set<LR1Item> gotten; int oldIndex,newIndex;
+        for( oldIndex = 0; oldIndex<this.automaton.getStates().size(); oldIndex++ ){
+            gotten = this.automaton.getStates().get(oldIndex);
+            for ( newIndex = 0; newIndex < this.lalrStates.size(); newIndex++) {
+                if( this.lalrStates.get(newIndex).containsAll(gotten) ){
+                    oldStateToNewState.put(oldIndex, newIndex);
+                }
+            }
+        }
 
 
         // Step 3: Build the transitions for the new LALR(1) automaton.
@@ -168,6 +201,18 @@ public class LALR1Table {
         //  - Add a new transition for the LALR automaton: `merged(s) -X-> merged(t)`.
         //  - Use the mapping from step 2c to find the merged state IDs.
         //  - Store these new transitions in `lalrTransitions`.
+        Symbol tranSymbol;
+        int leftIndex,rightIndex;
+        for ( Map.Entry<Integer,Map<Symbol,Integer>> entryOriginSymbolDestiny : this.automaton.getTransitions().entrySet() ) {
+            leftIndex = oldStateToNewState.get(entryOriginSymbolDestiny.getKey());
+            for( Map.Entry<Symbol,Integer> entrySymbolDestiny : entryOriginSymbolDestiny.getValue().entrySet() ){
+                tranSymbol = entrySymbolDestiny.getKey();
+                rightIndex = oldStateToNewState.get(entrySymbolDestiny.getValue());
+
+                this.lalrTransitions.computeIfAbsent( leftIndex , k -> new HashMap<>() ).put(tranSymbol , rightIndex);
+            }
+        }
+        
 
         // Step 4: Fill the ACTION and GOTO tables based on the LALR automaton.
         //  - Call a helper method, e.g., `fillActionGoto()`.
