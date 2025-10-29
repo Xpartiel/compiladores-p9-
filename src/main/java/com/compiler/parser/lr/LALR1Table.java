@@ -81,15 +81,16 @@ public class LALR1Table {
             //Obtengo el estado LR1
             Set<LR1Item> stateLR1=automaton.getStates().get(s);
             //necesito crear un kernel entry por cada item y agregarlo al conjunto.
-            Set<KernelEntry> kernelStates = new HashSet<>();
+            Set<KernelEntry> kernelState = new HashSet<>();
 
             for (LR1Item lr1Item : stateLR1){
                 //Creo el kernel entry y lo agrego al conjunto
-                kernelStates.add(new KernelEntry(lr1Item.production, lr1Item.dotPosition));                
+                kernelState.add(new KernelEntry(lr1Item.production, lr1Item.dotPosition));                
             }
 
-            //Agregamos el conjunto kernelStates como llave y le asignamos un valor.
-            kernelStatesMap.computeIfAbsent(kernelStates, k -> new LinkedList<>()).add(s);
+            //Agregamos el conjunto kernelStates como llave y le asignamos un valor (el estado que lleva al 
+            //mismo kernel).
+            kernelStatesMap.computeIfAbsent(kernelState, k -> new LinkedList<>()).add(s);
         }
 
 
@@ -105,10 +106,58 @@ public class LALR1Table {
          * obtener la lista de todos los elementos que comparten un kernel (es decir, el valor de 
          * cada llave en el diccionario).
          * Luego con dicha lista debemos obtener todos los item de los id de los estados contenidos
-         * dicha lista, y agregar todos esos item a un conjunto.
+         * dicha lista (un item por cada lookahead), y agregar todos esos item a un conjunto.
          * 
          * Por ultimo solo debemos agregar el nuevo estado LALR1 a la lista de estados LALR1.
          */
+        //Itero sobre las entradas del diccionario (clave, valor)
+        for (Map.Entry<Set<KernelEntry>, List<Integer>> kernelStateEntry : kernelStatesMap.entrySet()){
+            //por cada kernel, obtenemos su lista de estados (id).
+            List<Integer> listId = kernelStateEntry.getValue();
+            //por cada entry kernel, obtenemos el kernel
+            Set<KernelEntry> kernel = kernelStateEntry.getKey();
+
+            //Mapa auxiliar para asociar un keyentry con los lookahead.
+            //Recuerda que es un item por lookahead, y solamente sucede si dos item en diferentes estados comparten el kernel
+            //en ese caso se agregan items por cada lookahead que se tenga en ambos kernel entry.
+            //Es decir, si un itemA con lookahead a tiene el mismo kernel que un itemB con lookahead b,
+            // se debe agregar un itemA con look a, un itemA con look b y lo mismo para itemB. 
+
+            Map<KernelEntry, Set<Symbol>> mergedLookaheads = new HashMap<>();
+            
+            //necesitamos encontrar todos los lookahead.
+            for (Integer num: listId){
+                //obtengo el estado
+                Set<LR1Item> conjuntoItems=this.automaton.getStates().get(num);
+                //obtengo todos los item del estado
+                for (LR1Item item : conjuntoItems){
+                    //por cada item, agrego su llave (KernelEntry) y su lookahead
+                    KernelEntry key = new KernelEntry(item.production, item.dotPosition);
+                    mergedLookaheads.computeIfAbsent(key, k -> new HashSet<>()).add(item.lookahead);
+                    //De esta manera, si los item de diferentes estados comparten un kernel entry 
+                    //estare agrupando los lookahead.
+                }
+            }
+            //necesitamos construir todos los estados LALR1 (un item por cada lookahead).
+            Set<LR1Item> lalrState = new HashSet<>();
+            for(Map.Entry<KernelEntry, Set<Symbol>> entryMerge : mergedLookaheads.entrySet()){
+                //obtengo el kernel Entry que comparten los lookaheads.
+                KernelEntry kernelCommon = entryMerge.getKey();
+                //obtengo los lookaheads que comparten un mismo kernel entry.
+                Set<Symbol> lookaheads = entryMerge.getValue();
+                
+                //Por cada lookahead debo contruir un item.
+                for (Symbol look : lookaheads){
+                    lalrState.add(new LR1Item(kernelCommon.production, kernelCommon.dotPosition, look));
+                }
+            }
+
+            //Despues de crear dicho conjunto de LR1Item, este es un lalrstate y debemos agregarlo 
+            //a la lista de estados lalr
+            this.lalrStates.add(lalrState);
+             
+
+        }
 
 
         //  c. Create a mapping from old LR(1) state IDs to new LALR(1) state IDs.
