@@ -130,27 +130,32 @@ public class LALR1Table {
 
     }
 
+    /**
+     * Auxiliar method to compute GoTo and Reduce values into the table
+     * 
+     * 1. Clear the action, gotoTable, and conflicts lists.
+     * 2. Iterate through each LALR state `s` from 0 to lalrStates.size() - 1.
+     * 3. For each state `s`, iterate through its LR1Item `it`.
+     *     a. Get the symbol after the dot, `X = it.getSymbolAfterDot()`.
+     *     b. If `X` is a terminal (SHIFT action):
+     *        - Find the destination state `t` from `lalrTransitions.get(s).get(X)`.
+     *        - Check for conflicts: if action table already has an entry for `[s, X]`, it's a conflict.
+     *        - Otherwise, set `action[s][X] = SHIFT(t)`.
+     *     c. If the dot is at the end of the production (`X` is null) (REDUCE or ACCEPT action):
+     *        - This is an item like `[A -> α •, a]`.
+     *        - If it's the augmented start production (`S' -> S •`) and lookahead is `$`, this is an ACCEPT action.
+     *          - Set `action[s][$] = ACCEPT`.
+     *        - Otherwise, it's a REDUCE action.
+     *          - For the lookahead symbol `a` in the item:
+     *          - Check for conflicts: if `action[s][a]` is already filled, report a Shift/Reduce or Reduce/Reduce conflict.
+     *          - Otherwise, set `action[s][a] = REDUCE(A -> α)`.
+     *  4. Populate the GOTO table.
+     *     - For each state `s`, look at its transitions in `lalrTransitions`.
+     *     - For each transition on a NON-TERMINAL symbol `B` to state `t`:
+     *     - Set `gotoTable[s][B] = t`.
+     */
     private void fillActionGoto() {
-        // 1. Clear the action, gotoTable, and conflicts lists.
-        // 2. Iterate through each LALR state `s` from 0 to lalrStates.size() - 1.
-        // 3. For each state `s`, iterate through its LR1Item `it`.
-        //    a. Get the symbol after the dot, `X = it.getSymbolAfterDot()`.
-        //    b. If `X` is a terminal (SHIFT action):
-        //       - Find the destination state `t` from `lalrTransitions.get(s).get(X)`.
-        //       - Check for conflicts: if action table already has an entry for `[s, X]`, it's a conflict.
-        //       - Otherwise, set `action[s][X] = SHIFT(t)`.
-        //    c. If the dot is at the end of the production (`X` is null) (REDUCE or ACCEPT action):
-        //       - This is an item like `[A -> α •, a]`.
-        //       - If it's the augmented start production (`S' -> S •`) and lookahead is `$`, this is an ACCEPT action.
-        //         - Set `action[s][$] = ACCEPT`.
-        //       - Otherwise, it's a REDUCE action.
-        //         - For the lookahead symbol `a` in the item:
-        //         - Check for conflicts: if `action[s][a]` is already filled, report a Shift/Reduce or Reduce/Reduce conflict.
-        //         - Otherwise, set `action[s][a] = REDUCE(A -> α)`.
-        // 4. Populate the GOTO table.
-        //    - For each state `s`, look at its transitions in `lalrTransitions`.
-        //    - For each transition on a NON-TERMINAL symbol `B` to state `t`:
-        //    - Set `gotoTable[s][B] = t`.
+        
 
 
         // 1. Clear the action, gotoTable, and conflicts lists.
