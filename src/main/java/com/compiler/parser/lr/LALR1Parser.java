@@ -9,6 +9,7 @@ import java.util.Stack;
 import com.compiler.lexer.Token;
 import com.compiler.parser.grammar.Production;
 import com.compiler.parser.grammar.Symbol;
+import com.compiler.parser.grammar.SymbolType;
 import com.compiler.parser.lr.LALR1Table.Action;
 import com.compiler.parser.lr.LALR1Table.Action.Type;
 
@@ -43,7 +44,7 @@ public class LALR1Parser {
         List<Token> tokenList = new ArrayList<>(tokens);
 
         //Before add a new token $ to the list, we need to build it.
-        Token dollar = new Token("end-of-input", "$");
+        Token dollar = new Token("$", "$");
 
         tokenList.add(dollar);
 
@@ -71,8 +72,7 @@ public class LALR1Parser {
         // 4. Start a loop that runs until an ACCEPT or ERROR condition is met.
         //Se refiere a que tengo que hacer un algoritmo de punto fijo?
         int idState=-1;
-        Action action;
-        
+        Action action=null;
         while(true){
             //a. Get the current state from the top of the stack.
                 idState =pila.peek();
@@ -82,12 +82,27 @@ public class LALR1Parser {
 
             //c. Look up the action in the ACTION table: action = table.getActionTable()[state][a.type].
             //Deberiamos verificar que no sea nulo el primer get?
-            HashMap<Symbol, Action> keyIdState=table.getActionTable().get(idState);
-            if(keyIdState!=null){
-                action = keyIdState.get(a.type);
+            Map<Symbol, Action> keyIdState=table.getActionTable().get(idState);
+            
+            //if(keyIdState!=null){
+                // action = keyIdState.get(a.type);
+                // Symbol terminal = new Symbol(a.type, SymbolType.TERMINAL);
+                // action = keyIdState.get(terminal);
+            //}
+            Symbol lookupSymbol = null;
+            for (Symbol s : keyIdState.keySet()) {
+                System.out.println(s.toString());
+                if (s.name.equals(a.type)) {
+                lookupSymbol = s;
+                break;
+                }
+            }
+            if (lookupSymbol != null) {
+                action = keyIdState.get(lookupSymbol);
             }
             //d. If no action is found (it's null), it's a syntax error. Return false.
             if(action==null){
+                System.out.println("Aqui falla ");
                 return false; //Syntax error, there is no action in this state.
             }
 
@@ -98,8 +113,7 @@ public class LALR1Parser {
                 pila.push(action.state);
                 //ii. Advance the input pointer: ip++.
                 ip++;
-            }
-
+            }else
             //    f. If the action is REDUCE(A -> β):
             if (action.type == Type.REDUCE){
                 //i. Pop |β| symbols (and states) from the stack. Handle epsilon productions (where |β|=0).
@@ -144,17 +158,18 @@ public class LALR1Parser {
                     //v. Push the goto_state onto the stack.
                     pila.push(goto_state); //nose si es necesario castear a int o no.
                 } 
-            }
-
+            }else
             //g. If the action is ACCEPT:     
             if (action.type==Type.ACCEPT){
             //i. The input has been parsed successfully. Return true.    
                 return true;
-            }
-
-            //    h. If the action is none of the above, it's an unhandled case or error. Return false.
+            }else{
+                //    h. If the action is none of the above, it's an unhandled case or error. Return false.
             //mañana mejor si lo cambiamos por un switch, hacer un if muy largo no me convence en este paso.
        
-        };
+                return false;
+            }
+            
+        }
    }
 }

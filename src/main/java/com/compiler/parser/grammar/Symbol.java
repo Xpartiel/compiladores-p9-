@@ -51,4 +51,15 @@ public class Symbol {
         result = 31 * result + type.hashCode();
         return result;
     }
+
+    public String toString(){
+        String cadena="";
+        cadena=cadena+this.name;
+        if (this.type==SymbolType.TERMINAL){
+            cadena=cadena+" Terminal";
+        }else{
+            cadena=cadena+" No Terminal";
+        }
+        return cadena;
+    }
 }
