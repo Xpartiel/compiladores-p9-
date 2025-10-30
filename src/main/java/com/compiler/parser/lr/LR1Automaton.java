@@ -162,7 +162,8 @@ public class LR1Automaton {
             ++reachedSymbols;
 
             // a. Get `FIRST(X)` from the pre-calculated `firstSets`.
-            first = new HashSet<>( firstSets.get( symbol ) );
+            first = new HashSet<>( firstSets.getOrDefault(symbol, new HashSet<>()) );
+
 
             // b. Add all symbols from `FIRST(X)` to the result, except for epsilon.
             hasEpsilon = first.remove(epsilon);

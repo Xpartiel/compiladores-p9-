@@ -217,10 +217,7 @@ public class LALR1Table {
         // Step 4: Fill the ACTION and GOTO tables based on the LALR automaton.
         //  - Call a helper method, e.g., `fillActionGoto()`.
 
-
-
-
-
+        this.fillActionGoto();
 
     }
 
