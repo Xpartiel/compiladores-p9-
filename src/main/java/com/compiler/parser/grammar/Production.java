@@ -47,5 +47,13 @@ public class Production {
         return right;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Production)) return false;
+        Production other = (Production) obj;
+        return left.equals(other.left) && right.equals(other.right);
+    }
+
 
 }
