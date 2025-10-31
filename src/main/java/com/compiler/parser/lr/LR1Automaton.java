@@ -28,7 +28,7 @@ public class LR1Automaton {
     private String augmentedLeftName = null;
 
     //simbolo auxiliar epsilon.
-    public Symbol epsilon =  new Symbol("epsilon", SymbolType.TERMINAL);
+    public Symbol epsilon =  new Symbol("\u03b5", SymbolType.TERMINAL);
     //Simbolo auxiliar dollar.
     public Symbol dollar = new Symbol("$", SymbolType.TERMINAL);
 
@@ -162,8 +162,16 @@ public class LR1Automaton {
             ++reachedSymbols;
 
             // a. Get `FIRST(X)` from the pre-calculated `firstSets`.
-            first = new HashSet<>( firstSets.getOrDefault(symbol, new HashSet<>()) );
-
+            //first = new HashSet<>( firstSets.getOrDefault(symbol, new HashSet<>()) );
+            first = firstSets.get(symbol);
+            if (first == null) {
+                if (symbol.type == SymbolType.TERMINAL) {
+                    res.add(symbol);
+                    break;
+                } else {
+                    first = Set.of(); // vacío
+                }
+            }
 
             // b. Add all symbols from `FIRST(X)` to the result, except for epsilon.
             hasEpsilon = first.remove(epsilon);
@@ -267,7 +275,7 @@ public class LR1Automaton {
         this.augmentedLeftName = primeStart.name;
 
         //Creamos la nueva regla de produción.
-        Production primeProduction= new Production(primeStart, List.of(start));
+        Production primeProduction= new Production(primeStart, List.of(start));//modificado
 
         //3. Create the initial item: `[S' -> • S, $]`.
         LR1Item initialItem = new LR1Item(primeProduction, 0, dollar);
@@ -297,7 +305,7 @@ public class LR1Automaton {
                 Set<LR1Item> j = this.goTo(stateI, x);
                 //ii
                 if (!j.isEmpty()) {
-
+                    /*
                     //si j ya existe en la lista de estados, solo recuperamos su indice.
                     int jIndex = -1;
                     for (int k = 0; k < states.size(); k++){
@@ -313,6 +321,14 @@ public class LR1Automaton {
                         workList.add(j);
                         jIndex = states.size() - 1;
                     }
+                    */
+
+                    int jIndex = states.indexOf(j);
+                    if (jIndex == -1) {
+                        states.add(j);
+                        workList.add(j);
+                        jIndex = states.size() - 1;
+                    }
 
                     //iii
                     //Creamos la nueva transicion.
@@ -320,7 +336,6 @@ public class LR1Automaton {
                     //si no existe un valor para cla clave iIndex, crealo y agregale el mapeo.
                     //Estoy en el estado iIndex y me muevo con el simbolo x al estado jindex.
                     this.transitions.computeIfAbsent(iIndex, k -> new HashMap<>()).put(x,jIndex);
-
                 }
             }
         }
@@ -331,6 +346,13 @@ public class LR1Automaton {
             for (LR1Item item : states.get(i)) {
                 System.out.println("   " + item);
             }
+
+            if ( transitions.containsKey(i) ){
+            for (Map.Entry<Symbol, Integer> entry : transitions.get(i).entrySet()) {
+                System.out.println("      on " + entry.getKey().name + " -> I" + entry.getValue());
+            }
+        }
+        System.out.println();
         }
     }
 

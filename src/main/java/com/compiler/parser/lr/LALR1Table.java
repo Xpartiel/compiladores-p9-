@@ -299,8 +299,11 @@ public class LALR1Table {
                     //obtener el simbolo S'
                     Symbol initialSymbolPrime = new Symbol(sPrime, SymbolType.NON_TERMINAL);
                     //obtener el simbolo S
+                    /*
                     int index= sPrime.indexOf("'");
-                    String sInitial= sPrime.substring(0,index);
+                    String sInitial= sPrime.substring(0,index-1);
+                    */
+                    String sInitial = sPrime.replace("'", "");
                     //crear el simbolo.
                     Symbol sSymbol = new Symbol(sInitial, SymbolType.NON_TERMINAL);
 
@@ -311,7 +314,9 @@ public class LALR1Table {
                     //Para verificar si el action ya contiene un elemento.
                     Map<Symbol, Action> row = action.computeIfAbsent(s, k -> new HashMap<>());
 
-                    if (item.production.equals(prod)&& item.lookahead.equals(this.automaton.dollar)){
+                    //if (item.production.equals(prod) && item.lookahead.equals(this.automaton.dollar)){
+                    if ( item.lookahead.equals(this.automaton.dollar)){
+                        System.out.println( item.lookahead.name + " == " + this.automaton.dollar.name );
                         //Si la produccion es del tipo S' -> S y el lookahead es "$", aceptamos.
                         //- Set `action[s][$] = ACCEPT`.
                         row.put(this.automaton.dollar, Action.accept());
