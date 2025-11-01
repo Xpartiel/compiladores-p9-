@@ -1,15 +1,14 @@
 package com.compiler.parser.lr;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.List;
 import java.util.Queue;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.HashSet;
 
 import com.compiler.parser.grammar.Grammar;
 import com.compiler.parser.grammar.Production;
@@ -29,9 +28,9 @@ public class LR1Automaton {
     private Production augmenteProduction=null;
 
     //simbolo auxiliar epsilon.
-    public Symbol epsilon =  new Symbol("\u03b5", SymbolType.TERMINAL);
+    public final Symbol epsilon =  new Symbol("\u03b5", SymbolType.TERMINAL);
     //Simbolo auxiliar dollar.
-    public Symbol dollar = new Symbol("$", SymbolType.TERMINAL);
+    public final Symbol dollar = new Symbol("$", SymbolType.TERMINAL);
 
     public LR1Automaton(Grammar grammar) {
         this.grammar = Objects.requireNonNull(grammar);
@@ -59,73 +58,62 @@ public class LR1Automaton {
      *  5. Return the `closure` set.
      */
     private Set<LR1Item> closure(Set<LR1Item> items) {
-        //Paso 1:
+        
+        // 1. Initialize a new set `closure` with the given `items`.
         HashSet<LR1Item> closure = new HashSet<>(items);
         
-        //Paso 2:
+        // 2. Create a worklist (like a Queue or List) and add all items from `items` to it.
         Queue<LR1Item> worklist = new LinkedList<>(items);
 
-        //Paso3: 
-        //para calcular el first
+        // 3. Pre-calculate the FIRST sets for all symbols in the grammar.
         StaticAnalyzer calc = new StaticAnalyzer(grammar);
-        //calculamos el first de toda la gramatica.
         Map<Symbol, Set<Symbol>> first = calc.getFirstSets();
 
-        // 4. While the worklist is not empty:
-        // Paso 4:
-        while (!worklist.isEmpty()){
-
+        // 4. While the worklist is not empty::
+        while ( !worklist.isEmpty() ){
             // a. Dequeue an item `[A -> α • B β, a]`.
             LR1Item item = worklist.poll();
 
             // b. If `B` is a non-terminal:
             Symbol characterB= item.getSymbolAfterDot();
-            if( (characterB != null) && (characterB.type == SymbolType.NON_TERMINAL) ){ //puede ser que sea necesario verificar que no sea null
+            if( (characterB != null) && (characterB.type == SymbolType.NON_TERMINAL) ){
 
-                //Primero obtenemos todas las producciones de B
+                // As an inbetween step, we obtain B's productions
                 LinkedList<Production> productionsB = new LinkedList<>();
                 for (Production prod : this.grammar.getProductions()){
                     if (prod.left.equals(characterB)){
                         productionsB.add(prod);
                     }
                 }
-                // i. For each production of `B` (e.g., `B -> γ`):
-                for (Production production : productionsB){
-                    //necesitamos un metodo auxilar que devuelva una secuencia (Lista de simbolos) a
-                    //partir de la posicion del punto (aunque luego eliminaremos el final o el primero
-                    //segun donde este el simbolo B).
 
-                    //obtenemos la secuencia despues del punto.
+                // i. For each production of B (e.g., `B -> γ`):
+                for (Production production : productionsB){
+
+                    // As an inbetween step, we obtain the symbol sequence after the dot position
                     LinkedList<Symbol> seq =this.productionPostDot(item);
-                    //Eliminamos B para obtener la secuencia a partir de Beta
+
+                    // Ommit the symbol at the head, as it corresponds to the lookahead
                     if( !seq.isEmpty() ){
                         seq.removeFirst();
                     }
                     
-                    //Añadimos el lookahead a la secuencia despues de beta.
+                    // Add lookahead to the sequence after beta
                     seq.add(item.lookahead);
                     
-                    //- Calculate the FIRST set of the sequence `βa`. This will be the lookahead for the new item.
+                    // - Calculate the FIRST set of the sequence `βa`. This will be the lookahead for the new item.
                     Set<Symbol> newLookAhead = this.computeFirstOfSequence(seq, first,epsilon);
-                    //- For each terminal `b` in FIRST(βa):
-                    for (Symbol symbol : newLookAhead){
+                    // - For each terminal `b` in FIRST(βa):
+                    for ( Symbol symbol : newLookAhead ){
                         if(symbol.type==SymbolType.TERMINAL){
-                            //             - Create a new item `[B -> • γ, b]`.
+                            // - Create a new item `[B -> • γ, b]`.
                             LR1Item newItem = new LR1Item(production, 0, symbol);
 
-                            //             - If this new item is not already in the `closure` set:
-                            //               - Add it to `closure`.
-                            //               - Enqueue it to the worklist.
-                            if (closure.add(newItem)){
+                            // - If this new item is not already in the `closure` set:
+                            //    - Add it to `closure`.
+                            //    - Enqueue it to the worklist.
+                            if( closure.add(newItem) ){
                                 worklist.add(newItem);
-                            }
-
-                        }
-                        
-                    }
-                }
-            } 
-        }
+        }   }   }   }   }   }
         
         // 5. Return the `closure` set.
         return closure;
@@ -163,16 +151,16 @@ public class LR1Automaton {
             ++reachedSymbols;
 
             // a. Get `FIRST(X)` from the pre-calculated `firstSets`.
-            //first = new HashSet<>( firstSets.getOrDefault(symbol, new HashSet<>()) );
             first = firstSets.get(symbol);
+
             if (first == null) {
+                // No case in going further if its a terminal symbol; simply add it to the set.
                 if (symbol.type == SymbolType.TERMINAL) {
                     res.add(symbol);
                     break;
                 } else {
                     first = Set.of(); // vacío
-                }
-            }
+            }   }
 
             // b. Add all symbols from `FIRST(X)` to the result, except for epsilon.
             hasEpsilon = first.remove(epsilon);
@@ -186,8 +174,7 @@ public class LR1Automaton {
             // d. If it does contain epsilon and this is the last symbol in the sequence, add epsilon to the result set.
             if( reachedSymbols == seq.size() ){
                 res.add(epsilon);
-            }
-        }
+        }   }
         // 4. Return the result set.
         return res;
     }
@@ -201,8 +188,9 @@ public class LR1Automaton {
     private LinkedList<Symbol> productionPostDot( LR1Item item ){
         // Initialize empty listing
         LinkedList<Symbol> res = new LinkedList<>();
-
         List<Symbol> productions = item.production.getRight();
+        
+        // Add each symbol from the dot position onwards
         for (int i = item.dotPosition; i < productions.size(); i++){
             res.add( productions.get(i) );
         }
@@ -238,9 +226,7 @@ public class LR1Automaton {
                     item.production,
                     item.dotPosition+1,
                     item.lookahead));
-                }
-            }
-        }
+        }   }   }
 
         // 3. Return the `closure` of `movedItems`.
         return closure(movedItems);
@@ -265,84 +251,57 @@ public class LR1Automaton {
      */
     public void build() {
 
-        //1.Eliminamos todas los estados y transiciones.
+        // 1. Clear any existing states and transitions.
         this.states.clear();
         this.transitions.clear();
 
-        //2.Create the augmented grammar: Add a new start symbol S' and production S' -> S.
-        //Creamos el nuevo simbolo.
+        // 2.Create the augmented grammar: Add a new start symbol S' and production S' -> S.
         Symbol start = grammar.getStartSymbol();
         Symbol primeStart = new Symbol(start.name + "'", SymbolType.NON_TERMINAL);
         this.augmentedLeftName = primeStart.name;
 
-        //Creamos la nueva regla de produción.
-        Production primeProduction= new Production(primeStart, List.of(start));//modificado
+        // We create and store the augmented production to ease future implementations
+        Production primeProduction= new Production(primeStart, List.of(start));
+        this.augmenteProduction = primeProduction;
 
-        //feat: nueva referencia a la produccion aumentada para facil solucion en la generacion de la tabla.
-        this.augmenteProduction=primeProduction;
-
-        //3. Create the initial item: `[S' -> • S, $]`.
+        // 3. Create the initial item: `[S' -> • S, $]`.
         LR1Item initialItem = new LR1Item(primeProduction, 0, dollar);
 
-        //4. The first state, `I0`, is the `closure` of this initial item set. Add `I0` to the list of states.
+        // 4. The first state, `I0`, is the `closure` of this initial item set. Add `I0` to the list of states.
         Set<LR1Item> I0 = closure(Set.of(initialItem));
         states.add(I0);
 
-        //5. Create a worklist (queue) and add `I0` to it.
+        // 5. Create a worklist (queue) and add `I0` to it.
         Queue<Set<LR1Item>> workList = new LinkedList<>();
         workList.add(I0);
 
-        //Simbolos de la gramatica (los usaremos dentro del bucle)
-        //Dado que no tenemos un metodo que devuelva todos los simbolos de la gramatica
-        //unimos los dos conjuntos de simboloes terminales y no terminales en uno solo.
-        Set<Symbol>grammarSymbols = new HashSet<>(this.grammar.getNonTerminals());
+        // We first obtain the grammar symbols as we dont have a straightforward getter
+        // methor to get them all in one call.
+        Set<Symbol> grammarSymbols = new HashSet<>( this.grammar.getNonTerminals() );
         grammarSymbols.addAll(this.grammar.getTerminals());
-
-        while (!workList.isEmpty()){
-            //a
+        int iIndex,jIndex;
+        while ( !workList.isEmpty() ){
+            // a. Dequeue a state `I`.
             Set<LR1Item> stateI = workList.poll();
-            int iIndex = states.indexOf(stateI);
+            iIndex = states.indexOf(stateI);
 
-            //b
+            // b. For each grammar symbol `X`:
             for (Symbol x : grammarSymbols){
-                //i
+                // i. Calculate `J = goTo(I, X)`.
                 Set<LR1Item> j = this.goTo(stateI, x);
-                //ii
-                if (!j.isEmpty()) {
-                    /*
-                    //si j ya existe en la lista de estados, solo recuperamos su indice.
-                    int jIndex = -1;
-                    for (int k = 0; k < states.size(); k++){
-                        if (states.get(k).equals(j)){
-                            jIndex = k;
-                            break;
-                        }
-                    }
+                // ii. If `J` is not empty and not already in the list of states:
+                if ( !j.isEmpty() ){
 
-                    //Si el indice no cambia, quiere decir que es un nuevo estado.
-                    if (jIndex == -1) {
-                        states.add(j);
-                        workList.add(j);
-                        jIndex = states.size() - 1;
-                    }
-                    */
-
-                    int jIndex = states.indexOf(j);
+                    jIndex = states.indexOf(j);
                     if (jIndex == -1) {
                         states.add(j);
                         workList.add(j);
                         jIndex = states.size() - 1;
                     }
 
-                    //iii
-                    //Creamos la nueva transicion.
-                    //Si ya existe un valor para la clave iIndex, agregale el mapeo
-                    //si no existe un valor para cla clave iIndex, crealo y agregale el mapeo.
-                    //Estoy en el estado iIndex y me muevo con el simbolo x al estado jindex.
-                    this.transitions.computeIfAbsent(iIndex, k -> new HashMap<>()).put(x,jIndex);
-                }
-            }
-        }
+                    // iii. Create a transition from the index of state `I` to the index of state `J` on symbol `X`.
+                    this.transitions.computeIfAbsent( iIndex, k -> new HashMap<>() ).put(x,jIndex);
+        }   }   }
 
         //Para poder revisar si los estados estan correctos:
         for (int i = 0; i < states.size(); i++) {
@@ -350,21 +309,18 @@ public class LR1Automaton {
             for (LR1Item item : states.get(i)) {
                 System.out.println("   " + item);
             }
-
             if ( transitions.containsKey(i) ){
-            for (Map.Entry<Symbol, Integer> entry : transitions.get(i).entrySet()) {
-                System.out.println("      on " + entry.getKey().name + " -> I" + entry.getValue());
-            }
-        }
-        System.out.println();
-        }
-    }
+                for (Map.Entry<Symbol, Integer> entry : transitions.get(i).entrySet()) {
+                    System.out.println( "\ton " + entry.getKey().name + " -> I" + entry.getValue() );
+            }   }
+            System.out.println();
+    }   }
 
     public String getAugmentedLeftName() { return augmentedLeftName; }
-    /*
-     * ponia un nuevo metodo para obtener la produccion de la gramatica aumentada
+    
+    /**
+     * Getter Method to obtain the calculated augmented production S' -> S
      */
-
     public Production getAugmentedProduction(){
         return this.augmenteProduction;
     }
