@@ -1,7 +1,6 @@
 package com.compiler.parser.lr;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -9,7 +8,6 @@ import java.util.Stack;
 import com.compiler.lexer.Token;
 import com.compiler.parser.grammar.Production;
 import com.compiler.parser.grammar.Symbol;
-import com.compiler.parser.grammar.SymbolType;
 import com.compiler.parser.lr.LALR1Table.Action;
 import com.compiler.parser.lr.LALR1Table.Action.Type;
 
@@ -83,26 +81,31 @@ public class LALR1Parser {
             Token a = tokenList.get(ip);
 
             //c. Look up the action in the ACTION table: action = table.getActionTable()[state][a.type].
-            //Deberiamos verificar que no sea nulo el primer get?
             Map<Symbol, Action> keyIdState=table.getActionTable().get(idState);
             
+            //We look for the lookahead symbol.
             Symbol lookupSymbol = null;
+            //For each key in the map.
             for (Symbol s : keyIdState.keySet()) {
-                System.out.println(s.toString());
+                //if symbol and a has the same name.
                 if (s.name.equals(a.type)) {
-                lookupSymbol = s;
-                break;
+                    //we have found the lookahead symbol
+                    lookupSymbol = s;
+                    break;
                 }
             }
+
+            //if we have not found any match with a.type then lookup is null-
             if (lookupSymbol != null) {
+                //if not null, then we need to obtian its action.
                 action = keyIdState.get(lookupSymbol);
             }
             //d. If no action is found (it's null), it's a syntax error. Return false.
             if(action==null){
-                return false; //Syntax error, there is no action in this state.
+                //Syntax error, there is no action in this state.
+                return false;
             }
 
-            //optimizar esto con if else o con switch
             //e. If the action is SHIFT(s'):
             if (action.type == Type.SHIFT){
                 //i. Push the new state s' onto the stack.
@@ -113,25 +116,20 @@ public class LALR1Parser {
             //    f. If the action is REDUCE(A -> β):
             if (action.type == Type.REDUCE){
                 //i. Pop |β| symbols (and states) from the stack. Handle epsilon productions (where |β|=0).
-                //A lo que entendi, cada que hacemos shift agregamos un nuevo estado a la pila
-                //entonces si queremos hacer reduce, debemos popear los elementos correspondientes
-                // a la produccion, y dado que la pila no guarda simbolos sino estados
-                //estariamos regresando al estado antes de hacer dicha producción.
-                
-                
-                //obtengo la produccion del action.
+
+                //Getting the action production.
                 Production prod = action.reduceProd;
-                //Tamaño de beta.
+                //Helper var to save the size of Beta.
                 int sizeB;
                 //epsilon transition handler
                 if(prod.getRight().size()==1 && prod.getRight().get(0).name.equals("epsilon")){
                     sizeB=0;
                 }else{
-                    //obtengo la cardinalidad de Beta de dicha produccion.
+                    //saving size of Beta.
                     sizeB = prod.getRight().size();
                 }
                 
-                //popeo cardinalidad de beta.
+                //Make a pop a size of Beta times.
                 for (int i = 0; i <sizeB; i++){
                     pila.pop();
                 }
@@ -158,7 +156,7 @@ public class LALR1Parser {
                     return false;
                 }else{
                     //v. Push the goto_state onto the stack.
-                    pila.push(goto_state); //nose si es necesario castear a int o no.
+                    pila.push(goto_state);
                 } 
             }else
             //g. If the action is ACCEPT:     
@@ -167,14 +165,12 @@ public class LALR1Parser {
                 return true;
             }else{
                 //    h. If the action is none of the above, it's an unhandled case or error. Return false.
-            //mañana mejor si lo cambiamos por un switch, hacer un if muy largo no me convence en este paso.
-       
                 return false;
             }
             
         }
    }
-   
+
     public boolean parseSecondTry( List<Token> tokens ){
         return false;
     }
