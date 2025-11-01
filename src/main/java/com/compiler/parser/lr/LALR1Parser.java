@@ -1,7 +1,7 @@
 package com.compiler.parser.lr;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Stack;
 
@@ -69,7 +69,7 @@ public class LALR1Parser {
 
         // 4. Start a loop that runs until an ACCEPT or ERROR condition is met.
         //Se refiere a que tengo que hacer un algoritmo de punto fijo?
-        int idState=-1;
+        int idState = -1;
         Action action;
         while(true){
             //fix: initialize action as null in each iteration.
@@ -170,8 +170,4 @@ public class LALR1Parser {
             
         }
    }
-
-    public boolean parseSecondTry( List<Token> tokens ){
-        return false;
-    }
 }
