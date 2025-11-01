@@ -86,11 +86,6 @@ public class LALR1Parser {
             //Deberiamos verificar que no sea nulo el primer get?
             Map<Symbol, Action> keyIdState=table.getActionTable().get(idState);
             
-            //if(keyIdState!=null){
-                // action = keyIdState.get(a.type);
-                // Symbol terminal = new Symbol(a.type, SymbolType.TERMINAL);
-                // action = keyIdState.get(terminal);
-            //}
             Symbol lookupSymbol = null;
             for (Symbol s : keyIdState.keySet()) {
                 System.out.println(s.toString());
@@ -179,26 +174,7 @@ public class LALR1Parser {
             
         }
    }
-   // 2. Create a mutable list of input tokens from the parameter and add the end-of-input token ("$").
-        //Before add a new token $ to the list, we need to build it.
-   // 3. Initialize an instruction pointer `ip` to 0, pointing to the first token.
-   // 4. Start a loop that runs until an ACCEPT or ERROR condition is met.
-        //    a. Get the current state from the top of the stack.
-        //    b. Get the current token `a` from the input list at index `ip`.
-        //    c. Look up the action in the ACTION table: action = table.getActionTable()[state][a.type].
-        //    d. If no action is found (it's null), it's a syntax error. Return false.
-        //    e. If the action is SHIFT(s'):
-        //       i. Push the new state s' onto the stack.
-        //       ii. Advance the input pointer: ip++.
-        //    f. If the action is REDUCE(A -> β):
-        //       i. Pop |β| symbols (and states) from the stack. Handle epsilon productions (where |β|=0).
-        //       ii. Get the new state `s` from the top of the stack.
-        //       iii. Look up the GOTO state: goto_state = table.getGotoTable()[s][A].
-        //       iv. If no GOTO state is found, it's an error. Return false.
-        //       v. Push the goto_state onto the stack.
-        //    g. If the action is ACCEPT:
-        //       i. The input has been parsed successfully. Return true.
-        //    h. If the action is none of the above, it's an unhandled case or error. Return false.
+   
     public boolean parseSecondTry( List<Token> tokens ){
         return false;
     }
