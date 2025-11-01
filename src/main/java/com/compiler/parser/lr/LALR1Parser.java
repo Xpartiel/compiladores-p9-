@@ -72,8 +72,10 @@ public class LALR1Parser {
         // 4. Start a loop that runs until an ACCEPT or ERROR condition is met.
         //Se refiere a que tengo que hacer un algoritmo de punto fijo?
         int idState=-1;
-        Action action=null;
+        Action action;
         while(true){
+            //fix: initialize action as null in each iteration.
+            action=null;
             //a. Get the current state from the top of the stack.
             idState = pila.peek();
 
@@ -102,7 +104,6 @@ public class LALR1Parser {
             }
             //d. If no action is found (it's null), it's a syntax error. Return false.
             if(action==null){
-                System.out.println("Aqui falla ");
                 return false; //Syntax error, there is no action in this state.
             }
 

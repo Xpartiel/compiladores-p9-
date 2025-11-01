@@ -191,10 +191,14 @@ public class LALR1Table {
             for ( newIndex = 0; newIndex < this.lalrStates.size(); newIndex++) {
                 if( this.lalrStates.get(newIndex).containsAll(gotten) ){
                     oldStateToNewState.put(oldIndex, newIndex);
+                    System.out.println("OLD STATE: "+oldIndex+" NEWSTATE: "+newIndex);
                 }
             }
         }
 
+        //Actualizar la variable initial state de la tabla.
+        this.initialState=oldStateToNewState.get(0);
+        System.out.println("Nuevo estado inicial"+this.initialState);
 
         // Step 3: Build the transitions for the new LALR(1) automaton.
         //  - For each transition in the original LR(1) automaton `s -X-> t`:
@@ -279,6 +283,10 @@ public class LALR1Table {
                     if (row.containsKey(x)) {
                         //si existe, entonces hay un conflicto.
                         conflicts.add("Conflict in state: " +s+ " on terminal: " +x);
+                        //Si tengo un reduce en la tabla y llega un shift, es mejor conservar el shift.
+                        if(row.get(x).type==Action.Type.REDUCE ){
+                            row.put(x, Action.shift(t));
+                        }
                     }else {
                         //- Otherwise, set `action[s][X] = SHIFT(t)`.
                         row.put(x, Action.shift(t));
@@ -315,7 +323,7 @@ public class LALR1Table {
                     Map<Symbol, Action> row = action.computeIfAbsent(s, k -> new HashMap<>());
 
                     //if (item.production.equals(prod) && item.lookahead.equals(this.automaton.dollar)){
-                    if ( item.lookahead.equals(this.automaton.dollar)){
+                    if ( item.production.equals(this.automaton.getAugmentedProduction()) &&  item.lookahead.equals(this.automaton.dollar)){
                         System.out.println( item.lookahead.name + " == " + this.automaton.dollar.name );
                         //Si la produccion es del tipo S' -> S y el lookahead es "$", aceptamos.
                         //- Set `action[s][$] = ACCEPT`.
@@ -325,10 +333,11 @@ public class LALR1Table {
                         //         - For the lookahead symbol `a` in the item:
                         //         - Check for conflicts: if `action[s][a]` is already filled, report a Shift/Reduce or Reduce/Reduce conflict.
                         if (row.containsKey(item.lookahead)){
-                            //reportar el conflicto.
+                            //reportar el conflicto y no hacemos nada porque tenemos un SHIFT o un REDUCE dentro de la tabla.
                             Action existing = row.get(item.lookahead);
                             conflicts.add("Conflict in state " + s + " on lookahead " + item.lookahead +
                                       " between " + existing.type + " and REDUCE(" + item.production + ")");
+                            
                         }else{
                             //         - Otherwise, set `action[s][a] = REDUCE(A -> α)`.
                             row.put(item.lookahead, Action.reduce(item.production));

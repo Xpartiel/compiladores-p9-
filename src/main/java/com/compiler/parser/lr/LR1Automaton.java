@@ -26,6 +26,7 @@ public class LR1Automaton {
     private final List<Set<LR1Item>> states = new ArrayList<>();
     private final Map<Integer, Map<Symbol, Integer>> transitions = new HashMap<>();
     private String augmentedLeftName = null;
+    private Production augmenteProduction=null;
 
     //simbolo auxiliar epsilon.
     public Symbol epsilon =  new Symbol("\u03b5", SymbolType.TERMINAL);
@@ -277,6 +278,9 @@ public class LR1Automaton {
         //Creamos la nueva regla de produción.
         Production primeProduction= new Production(primeStart, List.of(start));//modificado
 
+        //feat: nueva referencia a la produccion aumentada para facil solucion en la generacion de la tabla.
+        this.augmenteProduction=primeProduction;
+
         //3. Create the initial item: `[S' -> • S, $]`.
         LR1Item initialItem = new LR1Item(primeProduction, 0, dollar);
 
@@ -357,4 +361,13 @@ public class LR1Automaton {
     }
 
     public String getAugmentedLeftName() { return augmentedLeftName; }
+    /*
+     * ponia un nuevo metodo para obtener la produccion de la gramatica aumentada
+     */
+
+    public Production getAugmentedProduction(){
+        return this.augmenteProduction;
+    }
+
+
 }
