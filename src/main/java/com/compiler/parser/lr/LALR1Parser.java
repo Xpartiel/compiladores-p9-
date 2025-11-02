@@ -2,12 +2,17 @@ package com.compiler.parser.lr;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
+
+import org.xml.sax.HandlerBase;
 
 import com.compiler.lexer.Token;
 import com.compiler.parser.grammar.Production;
 import com.compiler.parser.grammar.Symbol;
+import com.compiler.parser.grammar.SymbolType;
 import com.compiler.parser.lr.LALR1Table.Action;
 import com.compiler.parser.lr.LALR1Table.Action.Type;
 
@@ -103,6 +108,22 @@ public class LALR1Parser {
             //d. If no action is found (it's null), it's a syntax error. Return false.
             if(action==null){
                 //Syntax error, there is no action in this state.
+                //Error de sintaxis: Se esperaba el token 'num' o 'exp', pero se ha encontrado '?'.
+                System.out.println("***************************************************");
+                System.out.println("ERROR DE SINTAXIS");
+                //Helper Set
+                Set<Symbol> tokenExpected =  new HashSet<>();
+                //For each key in the map.
+                for (Symbol s : keyIdState.keySet()) {
+                //if symbol and a has the same name.
+                    if (s.type == SymbolType.TERMINAL){
+                        //we have found the expected token for this state.
+                        tokenExpected.add(s);
+                    }
+                }
+                System.out.println("se esperaba alguno de los siguientes token: "+tokenExpected);
+                System.out.println("Pero se ha encontrado: "+a.type);
+                System.out.println("***************************************************");
                 return false;
             }
 
@@ -161,7 +182,10 @@ public class LALR1Parser {
             }else
             //g. If the action is ACCEPT:     
             if (action.type==Type.ACCEPT){
-            //i. The input has been parsed successfully. Return true.    
+            //i. The input has been parsed successfully. Return true.
+                System.out.println("-----------------------------------------");
+                System.out.println("The input was successfully accepted");  
+                System.out.println("-----------------------------------------");  
                 return true;
             }else{
                 //    h. If the action is none of the above, it's an unhandled case or error. Return false.
